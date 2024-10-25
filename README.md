@@ -11,10 +11,15 @@ Welcome to the **Blog API Backend**! This project is a RESTful API for a blog pl
 
 To set up and run the Blog API, make sure you have the following installed:
 
-### 1. 🗄️ MongoDB
+### 0. 🗄️ MongoDB
    - Install [MongoDB](https://www.mongodb.com/try/download/community) and [MongoDB Compass](https://www.mongodb.com/try/download/compass) for database management.
    - Create a new database named **`blogDb`** in MongoDB.
 
+### 1. 📂 Clone the Project
+   ```bash
+   git clone https://github.com/surafel-47/blog_mmcy.git
+   cd <project-directory>
+   ```
 ### 2. 🟩 Node.js
    - Ensure you have [Node.js](https://nodejs.org/en/) installed on your machine.
 
