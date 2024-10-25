@@ -1,0 +1,589 @@
+openapi: 3.0.0
+info:
+  title: Blog and Content Management API
+  version: 1.0.0
+  description: API for a blogging and content management system with user and editor roles
+servers:
+  - url: http://localhost:3000 # Replace with your actual server URL
+paths:
+  /api/registerViewerUser:
+    post:
+      summary: Register a new viewer user
+      tags:
+        - User Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Unique username for the user
+                email:
+                  type: string
+                  format: email
+                  description: Unique email address for the user
+                password:
+                  type: string
+                  format: password
+                  description: Password for the user account
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Bad request, such as missing fields or user already exists
+        '500':
+          description: Server error during registration
+  /api/registerEditorUser:
+    post:
+      summary: Register a new editor user
+      tags:
+        - User Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Unique username for the user
+                email:
+                  type: string
+                  format: email
+                  description: Unique email address for the user
+                password:
+                  type: string
+                  format: password
+                  description: Password for the user account
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Bad request, such as missing fields or user already exists
+        '500':
+          description: Server error during registration
+  /api/login:
+    post:
+      summary: User login
+      tags:
+        - User Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                usernameOrEmail:
+                  type: string
+                  description: Username or email address of the user
+                password:
+                  type: string
+                  format: password
+                  description: Password for the user account
+      responses:
+        '200':
+          description: Login successful, returns JWT token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  token:
+                    type: string
+                    description: JWT token for authentication
+                  user:
+                    type: object
+                    # Include user details here if needed
+        '400':
+          description: Invalid username/email or password
+        '500':
+          description: Server error during login
+  /api/getUserProfile:
+    get:
+      summary: Get user profile
+      tags:
+        - User Account
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  user:
+                    type: object
+                    # Include user profile details here
+        '400':
+          description: Authentication required or user not found
+        '500':
+          description: Server error
+  /api/toggleNotifications:
+    post:
+      summary: Toggle user notification preferences
+      tags:
+        - User Account
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Notification preferences updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  receiveNotifications:
+                    type: boolean
+                    description: Updated notification preference (true/false)
+        '400':
+          description: Login required or user not found
+        '500':
+          description: Server error
+  /api/createPost:
+    post:
+      summary: Create a new blog post
+      tags:
+        - Blog Post
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the blog post
+                content:
+                  type: string
+                  description: Content of the blog post
+                categoryId:
+                  type: string
+                  description: ID of the category for the post
+      responses:
+        '200':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  post:
+                    type: object
+                    # Include details of the created post
+        '400':
+          description: Login required, invalid input, or user not authorized
+        '500':
+          description: Server error during post creation
+  /api/deletePost/{postId}:
+    delete:
+      summary: Delete a blog post
+      tags:
+        - Blog Post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: string
+          required: true
+          description: ID of the post to delete
+      responses:
+        '200':
+          description: Post deleted successfully
+        '400':
+          description: Login required, post not found, or unauthorized
+        '500':
+          description: Server error during post deletion
+  /api/editPost/{postId}:
+    patch:
+      summary: Edit a blog post
+      tags:
+        - Blog Post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: string
+          required: true
+          description: ID of the post to edit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Updated title of the blog post
+                content:
+                  type: string
+                  description: Updated content of the blog post
+                categoryId:
+                  type: string
+                  description: Updated ID of the category for the post
+      responses:
+        '200':
+          description: Post updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  post:
+                    type: object
+                    # Include details of the updated post
+        '400':
+          description: Login required, post not found, or unauthorized
+        '500':
+          description: Server error during post update
+  /api/blogs:
+    get:
+      summary: Get a list of blog posts
+      tags:
+        - Blog Post
+      parameters:
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, viewCount, category]
+          description: Sort criterion for posts (default: createdAt)
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search term for filtering posts by title
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+          description: Category ID for filtering posts
+        - in: query
+          name: authorUserName
+          schema:
+            type: string
+          description: Author's username for filtering posts
+      responses:
+        '200':
+          description: Blogs fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  blogs:
+                    type: array
+                    items:
+                      type: object
+                      # Include details of each blog post
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      # Include details of each category
+        '500':
+          description: Server error
+  /api/viewBlog/{postId}:
+    get:
+      summary: View a blog post with details
+      tags:
+        - Blog Post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: string
+          required: true
+          description: ID of the post to view
+      responses:
+        '200':
+          description: Blog post fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  post:
+                    type: object
+                    # Include details of the blog post
+                  favorited:
+                    type: boolean
+                    description: Whether the logged-in user has favorited the post
+                  canModify:
+                    type: boolean
+                    description: Whether the logged-in user can modify the post
+        '400':
+          description: Blog post not found
+        '500':
+          description: Server error
+  /api/getCategories:
+    get:
+      summary: Get all categories
+      tags:
+        - Category
+      responses:
+        '200':
+          description: Categories fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      # Include details of each category
+        '500':
+          description: Server error
+  /api/getRoles:
+    get:
+      summary: Get all roles
+      tags:
+        - Role
+      responses:
+        '200':
+          description: Roles fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      # Include details of each role
+        '500':
+          description: Server error
+  /api/createComment/{postId}:
+    post:
+      summary: Create a comment on a blog post
+      tags:
+        - Comment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: string
+          required: true
+          description: ID of the post to comment on
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: Content of the comment
+      responses:
+        '200':
+          description: Comment added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  comment:
+                    type: object
+                    # Include details of the created comment
+        '400':
+          description: Login required, post not found, or invalid input
+        '500':
+          description: Server error
+  /api/editComment/{commentId}:
+    patch:
+      summary: Edit a comment
+      tags:
+        - Comment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+          description: ID of the comment to edit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: Updated content of the comment
+      responses:
+        '200':
+          description: Comment edited successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  comment:
+                    type: object
+                    # Include details of the updated comment
+        '400':
+          description: Login required, comment not found, or unauthorized
+        '500':
+          description: Server error
+  /api/deleteComment/{commentId}:
+    delete:
+      summary: Delete a comment
+      tags:
+        - Comment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+          description: ID of the comment to delete
+      responses:
+        '200':
+          description: Comment deleted successfully
+        '400':
+          description: Login required, comment not found, or unauthorized
+        '500':
+          description: Server error
+  /api/getComments/{postId}:
+    get:
+      summary: Get comments for a blog post
+      tags:
+        - Comment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          schema:
+            type: string
+          required: true
+          description: ID of the post to get comments for
+      responses:
+        '200':
+          description: Comments fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      # Include details of each comment, excluding user's own comment
+                  your_comment:
+                    type: object
+                    # Include details of the user's own comment or null
+        '500':
+          description: Server error
+  /api/getAuditLogs:
+    get:
+      summary: Get audit logs (editor only)
+      tags:
+        - Audit Log
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: action
+          schema:
+            type: string
+          description: Filter logs by action (e.g., "registration", "login")
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Filter logs by date (YYYY-MM-DD format)
+      responses:
+        '200':
+          description: Audit logs fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  auditLogs:
+                    type: array
+                    items:
+                      type: object
+                      # Include details of each audit log entry
+        '400':
+          description: Login required or user not found
+        '403':
+          description: Only editors can access audit logs
+        '500':
+          description: Server error
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
