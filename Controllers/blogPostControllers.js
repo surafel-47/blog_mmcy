@@ -20,6 +20,8 @@ const sanitizeHtml = require("sanitize-html");
  *
  *
  ***********************************************************************************************************/
+
+
 // Controller to get all categories
 const getCategories = async (req, res) => {
   try {
@@ -108,12 +110,16 @@ const createPost = async (req, res) => {
       },
     });
 
+    // Get the file path from the uploaded file
+    const bannerImgUrl = req.file ? req.file.filename : null;
+
     // Create a new post
     const newPost = new PostModel({
       title,
       content: sanitizedContent, // Use the sanitized content
       categoryId,
       authorId,
+      bannerImgUrl,
     });
 
     // Save the post in the database
@@ -292,7 +298,6 @@ const editPost = async (req, res) => {
         ...sanitizeHtml.defaults.allowedAttributes,
         img: ["src", "alt"],
       },
-
     });
 
     // Update the post
@@ -329,6 +334,7 @@ const editPost = async (req, res) => {
 };
 
 // Get Post Blogs List Controller
+
 const getPostBlogsList = async (req, res) => {
   try {
     const {
@@ -342,8 +348,6 @@ const getPostBlogsList = async (req, res) => {
     let sortOption = {};
     if (sortBy === "viewCount") {
       sortOption = { viewCount: -1 }; // Sort by viewCount
-    } else if (sortBy === "category") {
-      sortOption = { categoryId: 1 }; // Sort by categoryId
     } else {
       sortOption = { createdAt: -1 }; // Default sort by date
     }
@@ -374,8 +378,7 @@ const getPostBlogsList = async (req, res) => {
 
     if (authorUserName) {
       blogs = blogsFetched.filter(
-        (blog) =>
-          blog.authorId.username.toLowerCase() === authorUserName.toLowerCase()
+        (blog) => blog.authorId.username.toLowerCase() === authorUserName.toLowerCase()
       );
     } else {
       blogs = blogsFetched;

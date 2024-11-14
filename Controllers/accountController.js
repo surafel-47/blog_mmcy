@@ -20,83 +20,92 @@ const Utils = require("../Utils/Utils.js");
  *
  ***********************************************************************************************************/
 
-  // Controller to register
-  const registerUser = async (req, res) => {
-    // Extract and trim input values
-    const { username, email, password, roleName } = {
-      username: req.body.username?.trim().toLowerCase(),
-      email: req.body.email?.trim().toLowerCase(),
-      password: req.body.password?.trim().toLowerCase(),
-      roleName: req.body.roleName?.trim().toLowerCase(),
-    };
+// Controller to register
+const registerUser = async (req, res) => {
+  // Extract and trim input values
+  const { username, email, password, roleName, fullname } = {
+    fullname: req.body.fullname?.trim().toLowerCase(),
+    username: req.body.username?.trim().toLowerCase(),
+    email: req.body.email?.trim().toLowerCase(),
+    password: req.body.password?.trim().toLowerCase(),
+    roleName: req.body.roleName?.trim().toLowerCase(),
+  };
 
-    // Basic validation for required fields
-    if (!username || !email || !password || !roleName) {
+  if (roleName !== "editor" && roleName !== "viewer") {
+    return res.status(400).json({
+      success: false,
+      message: "Role selected not found",
+    });
+  }
+
+  // Basic validation for required fields
+  if (!username || !email || !password || !roleName) {
+    return res.status(400).json({
+      success: false,
+      message: "All fields (username, email, password, role) are required",
+    });
+  }
+
+  try {
+    // Check if user already exists
+    const existingUser = await UserModel.findOne({
+      $or: [{ email }, { username }],
+    });
+
+    if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "All fields (username, email, password, role) are required",
+        message: "User with this email or username already exists",
       });
     }
 
-    try {
-      // Check if user already exists
-      const existingUser = await UserModel.findOne({
-        $or: [{ email }, { username }],
-      });
+    // Hash the password using bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10); // 10 rounds of hashing
 
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: "User with this email or username already exists",
-        });
-      }
-
-      // Hash the password using bcrypt
-      const hashedPassword = await bcrypt.hash(password, 10); // 10 rounds of hashing
-
-      // Find the role based on the passed roleName
-      const role = await RoleModel.findOne({ roleName });
-      if (!role) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid role",
-        });
-      }
-
-      // Create new user
-      const newUser = new UserModel({
-        username,
-        email,
-        passwordHash: hashedPassword,
-        roleId: role._id,
-      });
-
-      // Save the user in the database
-      await newUser.save();
-
-      // Log the registration event to the audit log
-      const auditLogEntry = new AuditLogModel({
-        action: "registration",
-        desc: `User Name ${(u = newUser.username)} - Email: ${
-          newUser.email
-        } Registered`,
-        userId: newUser._id, // Store the ID of the newly registered user
-        timestamp: new Date(),
-      });
-
-      auditLogEntry.save();
-
-      res
-        .status(201)
-        .json({ success: true, message: "User registered successfully" });
-    } catch (error) {
-      res.status(500).json({
+    // Find the role based on the passed roleName
+    const role = await RoleModel.findOne({ roleName });
+    if (!role) {
+      return res.status(400).json({
         success: false,
-        message: "Server Error",
-        error: error.message,
+        message: "Invalid role",
       });
     }
-  };
+
+    // Get the file path from the uploaded file
+    const avatarUrl = req.file ? req.file.filename : null;
+
+    // Create new user
+    const newUser = new UserModel({
+      fullname,
+      username,
+      email,
+      passwordHash: hashedPassword,
+      roleId: role._id,
+      avatarUrl
+    });
+
+    // Save the user in the database
+    await newUser.save();
+
+    // Log the registration event to the audit log
+    const auditLogEntry = new AuditLogModel({
+      action: "registration",
+      desc: `User Name ${(u = newUser.username)} - Email: ${newUser.email} Registered`,
+      userId: newUser._id, // Store the ID of the newly registered user
+      timestamp: new Date(),
+    });
+
+    auditLogEntry.save();
+
+    res.status(201).json({ success: true, message: "User registered successfully" });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
 
 //Login Controller
 const loginUser = async (req, res) => {
@@ -148,10 +157,8 @@ const loginUser = async (req, res) => {
     // Log the registration event to the audit log
     const auditLogEntry = new AuditLogModel({
       action: "login",
-      desc: `User Name ${(u = user.username)} - Email: ${
-        user.email
-      } Logged In`,
-      userId: user._id, 
+      desc: `User Name ${(u = user.username)} - Email: ${user.email} Logged In`,
+      userId: user._id,
       timestamp: new Date(),
     });
 
@@ -171,8 +178,6 @@ const loginUser = async (req, res) => {
     });
   }
 };
-
-
 
 // Get User Profile Controller
 const getUserProfile = async (req, res) => {
@@ -221,7 +226,7 @@ const toggleNotifications = async (req, res) => {
       });
     }
 
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
     // Find the user in the database
     const user = await UserModel.findById(userId);
@@ -251,5 +256,4 @@ const toggleNotifications = async (req, res) => {
   }
 };
 
-
-module.exports = { registerUser, loginUser,getUserProfile,toggleNotifications };
+module.exports = { registerUser, loginUser, getUserProfile, toggleNotifications };

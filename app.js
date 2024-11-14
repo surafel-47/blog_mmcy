@@ -10,6 +10,9 @@ const appRoutes = require("./Routes/appRoutes.js");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/uploads", express.static("uploads"));
+
+
 const swaggerDocument = YAML.load('./swagger.yaml'); 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
