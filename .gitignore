@@ -1,6 +1,8 @@
 # Dependency directories
 node_modules/
 
+uploads/*
+
 # Logs
 logs/
 *.log
@@ -29,6 +31,9 @@ build/Release/
 # Dependency directories
 # https://docs.npmjs.com/cli/v7/using-npm/developers
 #**/.env
+
+
+
 
 .DS_Store
 .env
